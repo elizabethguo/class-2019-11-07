@@ -1,0 +1,68 @@
+---
+title: "Baby Names"
+author: "Elizabeth Guo"
+date: "11/7/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(babynames)
+library(tidyverse)
+```
+
+
+```{r}
+babynames %>% 
+  distinct(year) %>% 
+  nrow()
+```
+
+```{r}
+babynames %>% 
+  distinct(name) %>% 
+  nrow()
+```
+
+```{r}
+babynames %>% 
+  group_by(name) %>% 
+  summarise(total = n()) %>% 
+  arrange(desc(total))
+```
+
+
+```{r}
+babynames %>% 
+  filter(name == "Elizabeth") %>% 
+  ggplot(aes(x = year, y = n)) + geom_col()
+```
+
+```{r}
+all_male_names <- 
+  babynames %>%
+  filter(sex == "M") %>% 
+  group_by(name) %>% 
+  summarise(total = n()) %>% 
+  filter(total == 138) %>% 
+  pluck("name")
+```
+
+```{r}
+one_name <- babynames %>% 
+  filter(name == "William", sex == "M")
+
+lm.obj <- lm(data = one_name, prop ~ year)
+```
+
+```{r}
+babynames %>%
+  filter(name %in% all_male_names) %>% 
+  filter(sex == "M") %>% 
+  group_by(name) %>% 
+  nest() %>% 
+  mutate(models = map(data, ~lm(prop ~ year, data = .x))) %>% 
+  mutate(coefficients = map(models, ~ coef(.x))) %>% 
+  mutate(slope = map_dbl(coefficients, ~ pluck(.x, "year")))
+```
+
